@@ -116,7 +116,8 @@ async function fetchStreamsFromSource(
   const uniqueCandidates = Array.from(new Set(candidates));
 
   let lastError = '';
-  const effectiveTimeout = Math.min(source.timeoutMs || timeoutMs, timeoutMs);
+  // Ensure timeout respects user's maxTimeoutMs setting properly
+  const effectiveTimeout = Math.max(timeoutMs || 8000, source.timeoutMs || 8000);
 
   for (const candidateManifestUrl of uniqueCandidates) {
     const baseUrl = candidateManifestUrl.replace(/\/manifest\.json$/, '');
@@ -292,11 +293,13 @@ app.post('/api/test-stream', async (req: Request, res: Response) => {
     });
   }
 
-  // Apply sorting
+  // Apply sorting (pt-br, pt-pt, dublado, dual audio prioritized, but ALL streams are kept)
   if (fusionConfig.settings.prioritizePortuguese) {
     allStreams.sort((a, b) => {
-      const aIsPT = /dublado|pt-br|português|portugues|brazuca|brazil|br/i.test(`${a.name} ${a.title}`);
-      const bIsPT = /dublado|pt-br|português|portugues|brazuca|brazil|br/i.test(`${b.name} ${b.title}`);
+      const aText = `${a.name || ''} ${a.title || ''} ${a.description || ''}`;
+      const bText = `${b.name || ''} ${b.title || ''} ${b.description || ''}`;
+      const aIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(aText);
+      const bIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(bText);
       if (aIsPT && !bIsPT) return -1;
       if (!aIsPT && bIsPT) return 1;
       return 0;
@@ -407,11 +410,13 @@ const handleStreams = async (req: Request, res: Response) => {
     });
   }
 
-  // Priority sorting: Portuguese first if enabled
+  // Priority sorting: Portuguese / Dual Audio first if enabled (does NOT remove non-PT streams)
   if (config.settings.prioritizePortuguese) {
     aggregatedStreams.sort((a, b) => {
-      const aIsPT = /dublado|pt-br|português|portugues|brazuca|brazil|br/i.test(`${a.name} ${a.title}`);
-      const bIsPT = /dublado|pt-br|português|portugues|brazuca|brazil|br/i.test(`${b.name} ${b.title}`);
+      const aText = `${a.name || ''} ${a.title || ''} ${a.description || ''}`;
+      const bText = `${b.name || ''} ${b.title || ''} ${b.description || ''}`;
+      const aIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(aText);
+      const bIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(bText);
       if (aIsPT && !bIsPT) return -1;
       if (!aIsPT && bIsPT) return 1;
       return 0;

@@ -9,7 +9,7 @@ interface ExportInstallCardProps {
 
 export const ExportInstallCard: React.FC<ExportInstallCardProps> = ({ config }) => {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-  const [useCustomToken, setUseCustomToken] = useState(false);
+  const [useCustomToken, setUseCustomToken] = useState(true);
 
   const token = encodeFusionConfig(config);
   const urls = getStremioInstallUrls(token);
@@ -67,7 +67,7 @@ export const ExportInstallCard: React.FC<ExportInstallCardProps> = ({ config }) 
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-400 shrink-0" />
             <span className="text-slate-300">
-              Modo de Link: <strong className="text-white">{useCustomToken ? 'Token Personalizado Minificado' : 'URL Curta Direta (Recomendado)'}</strong>
+              Modo de Link: <strong className="text-white">{useCustomToken ? 'Token de Configuração Dinâmica (Recomendado)' : 'URL Curta Padrão'}</strong>
             </span>
           </div>
 
@@ -75,7 +75,7 @@ export const ExportInstallCard: React.FC<ExportInstallCardProps> = ({ config }) 
             onClick={() => setUseCustomToken(!useCustomToken)}
             className="px-3 py-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-xs font-semibold rounded-lg transition-colors"
           >
-            {useCustomToken ? 'Alternar p/ Link Curto' : 'Alternar p/ Token Config'}
+            {useCustomToken ? 'Usar Link Curto Padrão' : 'Usar Token Personalizado'}
           </button>
         </div>
 
@@ -84,19 +84,17 @@ export const ExportInstallCard: React.FC<ExportInstallCardProps> = ({ config }) 
           <div className="flex items-start gap-2 bg-purple-950/40 border border-purple-500/40 rounded-xl p-3 text-[11px] text-purple-200">
             <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-purple-400" />
             <span>
-              <strong>Novo Addon Atualizado: Plugins BR (v2.0.0)</strong><br />
-              Se você possui o addon antigo (como <em>Fusion Stream v1.0.0</em> ou links de outros servidores como <em>onrender.com</em>) instalado no seu Stremio, <strong>desinstale o antigo no Stremio primeiro</strong> e depois clique no botão acima para instalar a versão oficial e atualizada <strong>Plugins BR</strong>!
+              <strong>Link Dinâmico com Suas Configurações (Plugins BR v2.0.0)</strong><br />
+              Sempre que você alterar um filtro, fonte ou opção acima, o link abaixo atualiza <strong>automaticamente em tempo real</strong> com seu novo token!
             </span>
           </div>
 
-          {!useCustomToken && (
-            <div className="flex items-start gap-2 bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-[11px] text-emerald-300">
-              <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
-              <span>
-                <strong>Instalação Rápida:</strong> A URL Curta Direta (<code className="text-white bg-slate-900 px-1 py-0.5 rounded">/manifest.json</code>) e a conexão pública (<code className="text-white bg-slate-900 px-1 py-0.5 rounded">ais-pre-</code>) conectam instantaneamente no Stremio (Windows, Mobile e TV).
-              </span>
-            </div>
-          )}
+          <div className="flex items-start gap-2 bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-[11px] text-emerald-300">
+            <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+            <span>
+              <strong>Dica de Atualização:</strong> Ao mudar qualquer filtro na aplicação, desinstale o addon anterior no Stremio e instale este novo link atualizado para que o Stremio carregue suas novas regras instantaneamente!
+            </span>
+          </div>
         </div>
 
         {/* URLs inputs */}
