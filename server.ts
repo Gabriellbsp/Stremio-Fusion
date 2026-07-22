@@ -325,11 +325,16 @@ const handleManifest = (req: Request, res: Response) => {
 
   const addonIdPart = token ? token.slice(0, 12).replace(/[^a-zA-Z0-9]/g, '') : 'v1';
 
+  let manifestName = config.name || 'Plugins BR';
+  if (manifestName.includes('Fusion Stream') || manifestName.includes('Brazuca + Torrentio')) {
+    manifestName = 'Plugins BR';
+  }
+
   // Create fast, non-blocking merged manifest
   const mergedManifest: StremioManifest = {
-    id: `com.fusion.stremio.${addonIdPart || 'v1'}`,
-    version: '1.0.0',
-    name: config.name || 'Plugins BR',
+    id: `com.pluginsbr.stremio.${addonIdPart || 'v1'}`,
+    version: '1.0.2',
+    name: manifestName,
     description: config.description || 'Addon unificado mesclando múltiplos provedores em uma só lista de streams.',
     resources: ['stream'],
     types: ['movie', 'series', 'anime', 'other'],

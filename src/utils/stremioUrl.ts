@@ -167,8 +167,13 @@ export function decodeFusionConfig(token?: string): FusionConfig {
 
     if (!compact || typeof compact !== 'object') return defaultConfig;
 
+    let decodedName = compact.n || defaultConfig.name;
+    if (decodedName.includes('Fusion Stream') || decodedName.includes('Brazuca + Torrentio')) {
+      decodedName = 'Plugins BR';
+    }
+
     return {
-      name: compact.n || defaultConfig.name,
+      name: decodedName,
       description: compact.d || defaultConfig.description,
       sources: Array.isArray(compact.s)
         ? compact.s.map((src: any, idx: number) => {
