@@ -202,10 +202,177 @@ async function fetchStreamsFromSource(
   };
 }
 
-// API Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', name: 'Stremio Addon Fusion', serverTime: new Date().toISOString() });
-});
+/**
+ * Helper to check if stream is an unconfigured notice or error placeholder
+ */
+function isNoticeOrInvalidStream(st: StremioStream): boolean {
+  const text = `${st.name || ''} ${st.title || ''} ${st.description || ''}`.toLowerCase();
+  if (
+    text.includes('kindly configure') ||
+    text.includes('configure this addon') ||
+    text.includes('unconfigured') ||
+    text.includes('configure addon') ||
+    text.includes('install manually') ||
+    text.includes('invalid api key') ||
+    text.includes('please set api') ||
+    text.includes('no debrid key')
+  ) {
+    return true;
+  }
+  // Streams must have at least url, infoHash, externalUrl, ytId or behaviorHints.externalUrl
+  if (!st.url && !st.infoHash && !st.externalUrl && !st.ytId && !st.behaviorHints?.externalUrl) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Extracts resolution rank from text
+ */
+function getResolutionRank(text: string): { rank: number; label: string; badge: string } {
+  const lower = text.toLowerCase();
+  if (/2160p|4k|uhd|ultra hd/i.test(lower)) {
+    return { rank: 4, label: '4k', badge: '✨ 4K' };
+  }
+  if (/1080p|full hd|fhd/i.test(lower)) {
+    return { rank: 3, label: '1080p', badge: '📺 1080p' };
+  }
+  if (/720p|hd/i.test(lower)) {
+    return { rank: 2, label: '720p', badge: '📹 720p' };
+  }
+  if (/480p|360p|sd/i.test(lower)) {
+    return { rank: 1, label: '480p', badge: '📱 480p' };
+  }
+  return { rank: 0, label: 'outros', badge: '' };
+}
+
+/**
+ * Helper to detect languages and assign country flag emojis
+ */
+function getLanguageFlag(text: string): string {
+  const lower = text.toLowerCase();
+  if (/dublado|pt-br|nacional|português|portugues|brazuca|brazil|br\b/i.test(lower)) {
+    return '🇧🇷';
+  }
+  if (/pt-pt|portugal/i.test(lower)) {
+    return '🇵🇹';
+  }
+  if (/legendado|eng|english|inglês|ingles|subbed|dual|multi|us\b/i.test(lower)) {
+    return '🇺🇸';
+  }
+  if (/esp|spanish|espanhol|latino/i.test(lower)) {
+    return '🇪🇸';
+  }
+  if (/fra|french|francês/i.test(lower)) {
+    return '🇫🇷';
+  }
+  if (/jp|japanese|japonês|anime/i.test(lower)) {
+    return '🇯🇵';
+  }
+  return '';
+}
+
+/**
+ * Process, filter, decorate with flags/badges and sort streams according to FusionConfig
+ */
+function processAndFilterStreams(rawStreams: StremioStream[], config: FusionConfig): StremioStream[] {
+  const settings: Partial<FusionConfig['settings']> = config.settings || {};
+  let streams = rawStreams.filter(st => !isNoticeOrInvalidStream(st));
+
+  // 1. Filter out CAM / TS / Screener if filterCamScr is true
+  if (settings.filterCamScr) {
+    streams = streams.filter(st => {
+      const text = `${st.name || ''} ${st.title || ''} ${st.description || ''}`.toLowerCase();
+      return !/cam\b|hdcam|ts\b|hdts|screener|scr\b|telecine|tc\b/i.test(text);
+    });
+  }
+
+  // 2. Filter by minimum resolution
+  if (settings.minResolution && settings.minResolution !== 'all') {
+    const minRank = settings.minResolution === '4k' ? 4 : settings.minResolution === '1080p' ? 3 : 2; // 720p
+    streams = streams.filter(st => {
+      const text = `${st.name || ''} ${st.title || ''} ${st.description || ''}`;
+      const { rank } = getResolutionRank(text);
+      return rank >= minRank || rank === 0; // Keep unspecified if no resolution tag
+    });
+  }
+
+  // 3. Decorate with Flags, Resolution Badges & Debrid Badge
+  streams = streams.map(st => {
+    const copy = { ...st };
+    const fullText = `${copy.name || ''} ${copy.title || ''} ${copy.description || ''}`;
+    const flag = settings.showLanguageFlags !== false ? getLanguageFlag(fullText) : '';
+    const res = settings.showResolutionBadges !== false ? getResolutionRank(fullText) : { badge: '' };
+
+    let debridBadge = '';
+    if (config.debrid?.service === 'torbox' && config.debrid.apiKey) {
+      debridBadge = '⚡ TorBox';
+    } else if (config.debrid?.service === 'realdebrid' && config.debrid.apiKey) {
+      debridBadge = '⚡ RD';
+    }
+
+    // Decorate stream name
+    const badges = [debridBadge, flag, res.badge].filter(Boolean).join(' ');
+    if (badges) {
+      if (copy.name && !copy.name.includes(badges)) {
+        copy.name = `${copy.name} ${badges}`.trim();
+      }
+    }
+
+    return copy;
+  });
+
+  // 4. Deduplication by InfoHash / URL
+  if (settings.removeDuplicates) {
+    const seenHashes = new Set<string>();
+    const seenUrls = new Set<string>();
+
+    streams = streams.filter(st => {
+      if (st.infoHash) {
+        const hash = st.infoHash.toLowerCase();
+        if (seenHashes.has(hash)) return false;
+        seenHashes.add(hash);
+      } else if (st.url) {
+        if (seenUrls.has(st.url)) return false;
+        seenUrls.add(st.url);
+      }
+      return true;
+    });
+  }
+
+  // 5. Sorting
+  const sortOrder = settings.sortOrder || (settings.prioritizePortuguese ? 'language_pt' : 'source_priority');
+
+  streams.sort((a, b) => {
+    const aText = `${a.name || ''} ${a.title || ''} ${a.description || ''}`;
+    const bText = `${b.name || ''} ${b.title || ''} ${b.description || ''}`;
+
+    if (sortOrder === 'language_pt' || settings.prioritizePortuguese) {
+      const aIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(aText);
+      const bIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(bText);
+      if (aIsPT && !bIsPT) return -1;
+      if (!aIsPT && bIsPT) return 1;
+    }
+
+    if (sortOrder === 'quality' || sortOrder === 'language_pt') {
+      const aRes = getResolutionRank(aText).rank;
+      const bRes = getResolutionRank(bText).rank;
+      if (aRes !== bRes) return bRes - aRes; // Higher resolution first
+    }
+
+    if (sortOrder === 'seeders') {
+      const aSeedMatch = aText.match(/👤\s*(\d+)|seeders:\s*(\d+)|s:\s*(\d+)/i);
+      const bSeedMatch = bText.match(/👤\s*(\d+)|seeders:\s*(\d+)|s:\s*(\d+)/i);
+      const aSeeds = aSeedMatch ? parseInt(aSeedMatch[1] || aSeedMatch[2] || aSeedMatch[3] || '0', 10) : 0;
+      const bSeeds = bSeedMatch ? parseInt(bSeedMatch[1] || bSeedMatch[2] || bSeedMatch[3] || '0', 10) : 0;
+      if (aSeeds !== bSeeds) return bSeeds - aSeeds;
+    }
+
+    return 0;
+  });
+
+  return streams;
+}
 
 // Check individual manifest endpoint
 app.post('/api/check-addon', async (req: Request, res: Response) => {
@@ -231,6 +398,58 @@ app.post('/api/check-addon', async (req: Request, res: Response) => {
       responseTimeMs,
       error: 'Não foi possível carregar o manifest. Verifique o link e se o servidor do addon está online.'
     });
+  }
+});
+
+// Check Debrid API Key endpoint
+app.post('/api/check-debrid', async (req: Request, res: Response) => {
+  const { service, apiKey } = req.body;
+  if (!service || service === 'none' || !apiKey) {
+    res.status(400).json({ success: false, error: 'Chave de API do Debrid não informada' });
+    return;
+  }
+
+  try {
+    if (service === 'torbox') {
+      const resp = await fetch('https://api.torbox.app/v1/api/user/me', {
+        headers: { 'Authorization': `Bearer ${apiKey.trim()}` }
+      });
+      const data = await resp.json();
+      if (resp.ok && (data.success || data.data)) {
+        const userInfo = data.data || {};
+        res.json({
+          success: true,
+          service: 'TorBox',
+          email: userInfo.email || 'Conta TorBox Ativa',
+          plan: userInfo.plan === 1 ? 'TorBox Pro' : 'Ativo',
+          expires: userInfo.premium_expires_at || 'Ativo',
+          message: 'Conexão com TorBox estabelecida com sucesso! ⚡'
+        });
+      } else {
+        res.json({ success: false, error: data.error || data.detail || 'Chave do TorBox inválida ou expirada.' });
+      }
+    } else if (service === 'realdebrid') {
+      const resp = await fetch('https://api.real-debrid.com/rest/1.0/user', {
+        headers: { 'Authorization': `Bearer ${apiKey.trim()}` }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        res.json({
+          success: true,
+          service: 'RealDebrid',
+          email: data.email || data.username,
+          plan: data.type === 'premium' ? 'Premium RD' : 'Ativo',
+          expires: data.expiration || 'Ativo',
+          message: 'Conexão com RealDebrid estabelecida com sucesso! ⚡'
+        });
+      } else {
+        res.json({ success: false, error: 'Chave do RealDebrid inválida ou expirada.' });
+      }
+    } else {
+      res.json({ success: true, service, message: `Configuração de ${service} salva.` });
+    }
+  } catch (err: any) {
+    res.json({ success: false, error: err?.message || 'Falha ao conectar ao serviço Debrid.' });
   }
 });
 
@@ -270,42 +489,13 @@ app.post('/api/test-stream', async (req: Request, res: Response) => {
     };
   });
 
-  // Apply deduplication if enabled
-  if (fusionConfig.settings.removeDuplicates) {
-    const seenHashes = new Set<string>();
-    const seenUrls = new Set<string>();
-
-    allStreams = allStreams.filter(st => {
-      if (st.infoHash) {
-        const hash = st.infoHash.toLowerCase();
-        if (seenHashes.has(hash)) return false;
-        seenHashes.add(hash);
-      } else if (st.url) {
-        if (seenUrls.has(st.url)) return false;
-        seenUrls.add(st.url);
-      }
-      return true;
-    });
-  }
-
-  // Apply sorting (pt-br, pt-pt, dublado, dual audio prioritized, but ALL streams are kept)
-  if (fusionConfig.settings.prioritizePortuguese) {
-    allStreams.sort((a, b) => {
-      const aText = `${a.name || ''} ${a.title || ''} ${a.description || ''}`;
-      const bText = `${b.name || ''} ${b.title || ''} ${b.description || ''}`;
-      const aIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(aText);
-      const bIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(bText);
-      if (aIsPT && !bIsPT) return -1;
-      if (!aIsPT && bIsPT) return 1;
-      return 0;
-    });
-  }
+  const processedStreams = processAndFilterStreams(allStreams, fusionConfig);
 
   res.json({
-    totalStreams: allStreams.length,
+    totalStreams: processedStreams.length,
     latencyMs: totalTimeMs,
     addonResults,
-    streams: allStreams
+    streams: processedStreams
   });
 });
 
@@ -387,40 +577,11 @@ const handleStreams = async (req: Request, res: Response) => {
     }
   });
 
-  // Deduplication
-  if (config.settings.removeDuplicates) {
-    const seenHashes = new Set<string>();
-    const seenUrls = new Set<string>();
+  const finalStreams = processAndFilterStreams(aggregatedStreams, config);
 
-    aggregatedStreams = aggregatedStreams.filter(st => {
-      if (st.infoHash) {
-        const hash = st.infoHash.toLowerCase();
-        if (seenHashes.has(hash)) return false;
-        seenHashes.add(hash);
-      } else if (st.url) {
-        if (seenUrls.has(st.url)) return false;
-        seenUrls.add(st.url);
-      }
-      return true;
-    });
-  }
+  console.log(`[Stremio Stream Response] Returning ${finalStreams.length} streams for ${type}/${id}`);
 
-  // Priority sorting: Portuguese / Dual Audio first if enabled (does NOT remove non-PT streams)
-  if (config.settings.prioritizePortuguese) {
-    aggregatedStreams.sort((a, b) => {
-      const aText = `${a.name || ''} ${a.title || ''} ${a.description || ''}`;
-      const bText = `${b.name || ''} ${b.title || ''} ${b.description || ''}`;
-      const aIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(aText);
-      const bIsPT = /dublado|pt-br|pt-pt|português|portugues|brazuca|brazil|br|pt\b/i.test(bText);
-      if (aIsPT && !bIsPT) return -1;
-      if (!aIsPT && bIsPT) return 1;
-      return 0;
-    });
-  }
-
-  console.log(`[Stremio Stream Response] Returning ${aggregatedStreams.length} streams for ${type}/${id}`);
-
-  res.json({ streams: aggregatedStreams });
+  res.json({ streams: finalStreams });
 };
 
 app.get('/stream/:type/:id', handleStreams);

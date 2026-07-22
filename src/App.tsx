@@ -3,11 +3,12 @@ import { Header } from './components/Header';
 import { PresetsSelector } from './components/PresetsSelector';
 import { AddonManager } from './components/AddonManager';
 import { FusionSettings } from './components/FusionSettings';
+import { DebridSettings } from './components/DebridSettings';
 import { ExportInstallCard } from './components/ExportInstallCard';
 import { StreamTester } from './components/StreamTester';
 import { AddonPreset, FusionConfig, SourceAddon } from './types';
 import { POPULAR_PRESETS } from './data/presets';
-import { Layers, Sliders, Tv, Zap, HelpCircle, ChevronRight, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Layers, Sliders, Tv, Zap, HelpCircle, ChevronRight, Check, AlertTriangle, ShieldCheck, HardDrive } from 'lucide-react';
 
 const INITIAL_CONFIG: FusionConfig = {
   name: 'Plugins BR',
@@ -50,7 +51,12 @@ const INITIAL_CONFIG: FusionConfig = {
     tagSourceNames: true,
     maxTimeoutMs: 8000,
     sortOrder: 'source_priority',
-    groupStreamsBySource: false
+    groupStreamsBySource: false,
+    showLanguageFlags: true,
+    showResolutionBadges: true,
+    minResolution: 'all',
+    filterCamScr: false,
+    preferredLanguages: ['PT-BR', 'EN']
   }
 };
 
@@ -89,7 +95,7 @@ export default function App() {
     return INITIAL_CONFIG;
   });
 
-  const [activeTab, setActiveTab] = useState<'manager' | 'settings' | 'tester' | 'guide'>('manager');
+  const [activeTab, setActiveTab] = useState<'manager' | 'debrid' | 'settings' | 'tester' | 'guide'>('manager');
 
   // Save to localStorage on change
   useEffect(() => {
@@ -147,6 +153,18 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab('debrid')}
+            className={`px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'debrid'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <HardDrive className="w-4 h-4 text-purple-400" />
+            <span>Debrid & TorBox</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('settings')}
             className={`px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
               activeTab === 'settings'
@@ -155,7 +173,7 @@ export default function App() {
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span>Regras & Filtros PT-BR</span>
+            <span>Aparência & Filtros</span>
           </button>
 
           <button
@@ -186,9 +204,14 @@ export default function App() {
         {/* TAB 1: ADDON MANAGER & PRESETS */}
         {activeTab === 'manager' && (
           <div className="space-y-8">
-            <PresetsSelector existingSources={config.sources} onAddPreset={handleAddPreset} />
             <AddonManager sources={config.sources} onUpdateSources={handleUpdateSources} />
+            <PresetsSelector existingSources={config.sources} onAddPreset={handleAddPreset} />
           </div>
+        )}
+
+        {/* TAB 2: DEBRID & TORBOX */}
+        {activeTab === 'debrid' && (
+          <DebridSettings config={config} onChangeConfig={setConfig} />
         )}
 
         {/* TAB 2: SETTINGS & FILTERS */}

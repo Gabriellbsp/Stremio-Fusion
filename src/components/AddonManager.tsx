@@ -236,12 +236,29 @@ export const AddonManager: React.FC<AddonManagerProps> = ({ sources, onUpdateSou
             </p>
           </div>
 
-          <button
-            onClick={handleHealthCheckAll}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-purple-400" /> Testar Status de Todos
-          </button>
+          <div className="flex items-center gap-2">
+            {sources.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm('Deseja realmente remover todos os addons configurados?')) {
+                    onUpdateSources([]);
+                  }
+                }}
+                className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                title="Limpar todos os addons para começar do zero"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Limpar Lista
+              </button>
+            )}
+
+            <button
+              onClick={handleHealthCheckAll}
+              disabled={sources.length === 0}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-purple-400" /> Testar Status de Todos
+            </button>
+          </div>
         </div>
 
         {sources.length === 0 ? (

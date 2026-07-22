@@ -74,17 +74,29 @@ export interface SourceAddon {
   };
 }
 
+export interface DebridConfig {
+  service: 'none' | 'torbox' | 'realdebrid' | 'alldebrid' | 'premiumize';
+  apiKey?: string;
+  autoUnrestrict?: boolean;
+}
+
 export interface FusionConfig {
   name: string;
   description: string;
   sources: SourceAddon[];
+  debrid?: DebridConfig;
   settings: {
     prioritizePortuguese: boolean;
     removeDuplicates: boolean;
     tagSourceNames: boolean;
     maxTimeoutMs: number;
-    sortOrder: 'quality' | 'source_priority' | 'seeders';
+    sortOrder: 'quality' | 'source_priority' | 'seeders' | 'language_pt';
     groupStreamsBySource: boolean;
+    showLanguageFlags: boolean; // Add flags like 🇧🇷, 🇺🇸, 🇪🇸, 🇯🇵
+    showResolutionBadges: boolean; // Add badges like ✨ 4K, 📺 1080p, 📹 720p
+    minResolution: 'all' | '720p' | '1080p' | '4k';
+    filterCamScr: boolean; // Hide CAM / TS / Screener low quality
+    preferredLanguages: string[]; // e.g. ['PT-BR', 'EN', 'ES']
   };
 }
 

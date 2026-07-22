@@ -45,15 +45,25 @@ export function encodeFusionConfig(config: FusionConfig): string {
 
     const compact = {
       n: (config.name === 'Plugins BR' || config.name === 'Fusion Stream (Brazuca + Torrentio)') ? undefined : config.name,
-      d: config.description === 'Addon unificado mesclando Brazuca, Torrentio e outros provedores em um só lugar.' ? undefined : config.description,
+      d: config.description === 'Unificador de Addons do Stremio: junta mídias brasileiras (Brazuca) e globais (Torrentio) em uma lista única sem filtros.' ? undefined : config.description,
       s: minifiedSources,
+      db: config.debrid?.service && config.debrid.service !== 'none' ? {
+        s: config.debrid.service,
+        k: config.debrid.apiKey || '',
+        u: config.debrid.autoUnrestrict ? 1 : 0
+      } : undefined,
       st: {
         p: config.settings.prioritizePortuguese ? 1 : 0,
         d: config.settings.removeDuplicates ? 1 : 0,
         t: config.settings.tagSourceNames ? 1 : 0,
         m: config.settings.maxTimeoutMs === 8000 ? undefined : config.settings.maxTimeoutMs,
         s: config.settings.sortOrder === 'source_priority' ? undefined : config.settings.sortOrder,
-        g: config.settings.groupStreamsBySource ? 1 : 0
+        g: config.settings.groupStreamsBySource ? 1 : 0,
+        f: config.settings.showLanguageFlags === false ? 0 : 1,
+        r: config.settings.showResolutionBadges === false ? 0 : 1,
+        mr: config.settings.minResolution || 'all',
+        fc: config.settings.filterCamScr ? 1 : 0,
+        pl: config.settings.preferredLanguages && config.settings.preferredLanguages.length > 0 ? config.settings.preferredLanguages : undefined
       }
     };
 
@@ -118,7 +128,17 @@ export function decodeFusionConfig(token?: string): FusionConfig {
       tagSourceNames: true,
       maxTimeoutMs: 8000,
       sortOrder: 'source_priority',
-      groupStreamsBySource: false
+      groupStreamsBySource: false,
+      showLanguageFlags: true,
+      showResolutionBadges: true,
+      minResolution: 'all',
+      filterCamScr: false,
+      preferredLanguages: ['PT-BR', 'EN']
+    },
+    debrid: {
+      service: 'none',
+      apiKey: '',
+      autoUnrestrict: true
     }
   };
 
@@ -196,13 +216,23 @@ export function decodeFusionConfig(token?: string): FusionConfig {
             };
           })
         : defaultConfig.sources,
+      debrid: compact.db ? {
+        service: compact.db.s || 'none',
+        apiKey: compact.db.k || '',
+        autoUnrestrict: compact.db.u !== 0
+      } : defaultConfig.debrid,
       settings: {
         prioritizePortuguese: compact.st?.p !== 0,
         removeDuplicates: compact.st?.d !== 0,
         tagSourceNames: compact.st?.t !== 0,
         maxTimeoutMs: compact.st?.m || 8000,
         sortOrder: compact.st?.s || 'source_priority',
-        groupStreamsBySource: compact.st?.g === 1
+        groupStreamsBySource: compact.st?.g === 1,
+        showLanguageFlags: compact.st?.f !== 0,
+        showResolutionBadges: compact.st?.r !== 0,
+        minResolution: compact.st?.mr || 'all',
+        filterCamScr: compact.st?.fc === 1,
+        preferredLanguages: Array.isArray(compact.st?.pl) ? compact.st.pl : ['PT-BR', 'EN']
       }
     };
   } catch (err) {
