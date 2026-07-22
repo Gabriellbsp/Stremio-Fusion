@@ -91,7 +91,6 @@ async function fetchStreamsFromSource(
   const lowerPrimary = primaryUrl.toLowerCase();
 
   if (lowerPrimary.includes('brazuca')) {
-    candidates.push('https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/sort=qualitysize|limit=10/manifest.json');
     candidates.push('https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/manifest.json');
     candidates.push('https://brazuca.stremio.app/manifest.json');
   }

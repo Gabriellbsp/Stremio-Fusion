@@ -45,7 +45,7 @@ const INITIAL_CONFIG: FusionConfig = {
     }
   ],
   settings: {
-    prioritizePortuguese: true,
+    prioritizePortuguese: false,
     removeDuplicates: true,
     tagSourceNames: true,
     maxTimeoutMs: 8000,

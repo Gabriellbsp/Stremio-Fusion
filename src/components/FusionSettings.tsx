@@ -24,10 +24,10 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ config, onChange
         <div>
           <h3 className="text-base font-semibold text-white flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-purple-400" />
-            Configurações de Fusão & Regras de Filtro
+            Configurações de Regras & Filtros
           </h3>
           <p className="text-xs text-slate-400">
-            Ajuste a priorização de links dublados (Brazuca), remoção de duplicados e tempo limite.
+            Todos os torrents (Inglês, Português, Espanhol, Russo, etc.) são mantidos sem remoção de links.
           </p>
         </div>
       </div>
@@ -89,7 +89,7 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ config, onChange
               />
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Move streams com dublagem brasileira e fontes do Brazuca para o topo da lista de reprodução no Stremio.
+              Coloca torrents PT-BR / Dublado no topo se encontrados, mas NENHUM torrent de outro idioma é ocultado. Se desativado, mantém a ordem original bruta de todas as fontes.
             </p>
           </div>
         </div>
