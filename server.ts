@@ -92,18 +92,14 @@ async function fetchStreamsFromSource(
 
   if (lowerPrimary.includes('brazuca')) {
     candidates.push('https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/manifest.json');
+    candidates.push('https://brazucatorrents.baby-beamup.club/manifest.json');
     candidates.push('https://brazuca.stremio.app/manifest.json');
   }
   
-  if (lowerPrimary.includes('torrentio')) {
-    candidates.push('https://torrentio.elfhosted.com/manifest.json');
-    candidates.push('https://knightcrawler.elfhosted.com/manifest.json');
+  if (lowerPrimary.includes('torrentio') || lowerPrimary.includes('knightcrawler') || lowerPrimary.includes('tpb') || lowerPrimary.includes('pirate')) {
+    candidates.push('https://stremio-tpb.vercel.app/manifest.json');
+    candidates.push('https://jackettio.elfhosted.com/manifest.json');
     candidates.push('https://torrentio.strem.fun/manifest.json');
-  }
-
-  if (lowerPrimary.includes('knightcrawler')) {
-    candidates.push('https://knightcrawler.elfhosted.com/manifest.json');
-    candidates.push('https://torrentio.elfhosted.com/manifest.json');
   }
 
   if (lowerPrimary.includes('comet')) {

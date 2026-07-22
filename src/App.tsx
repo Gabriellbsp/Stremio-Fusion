@@ -11,7 +11,7 @@ import { Layers, Sliders, Tv, Zap, HelpCircle, ChevronRight, Check, AlertTriangl
 
 const INITIAL_CONFIG: FusionConfig = {
   name: 'Plugins BR',
-  description: 'Unificador de Addons do Stremio: mídias do Brazuca e Torrentio em um só lugar.',
+  description: 'Unificador de Addons do Stremio: junta mídias brasileiras (Brazuca) e globais (Torrentio) em uma lista única sem filtros.',
   sources: [
     {
       id: 'src_brazuca_1',
@@ -24,24 +24,24 @@ const INITIAL_CONFIG: FusionConfig = {
       lastHealthCheck: { status: 'ok', responseTimeMs: 340, checkedAt: 'Agora' }
     },
     {
-      id: 'src_torrentio_2',
-      name: 'Torrentio',
+      id: 'src_torrentio_global_2',
+      name: 'Torrentio / TPB Global',
+      manifestUrl: 'https://stremio-tpb.vercel.app/manifest.json',
+      enabled: true,
+      prefixTag: '⚡ Torrentio Global',
+      priority: 2,
+      timeoutMs: 8000,
+      lastHealthCheck: { status: 'ok', responseTimeMs: 210, checkedAt: 'Agora' }
+    },
+    {
+      id: 'src_torrentio_3',
+      name: 'Torrentio (Direto)',
       manifestUrl: 'https://torrentio.strem.fun/manifest.json',
       enabled: true,
       prefixTag: '⚡ Torrentio',
-      priority: 2,
-      timeoutMs: 8000,
-      lastHealthCheck: { status: 'ok', responseTimeMs: 280, checkedAt: 'Agora' }
-    },
-    {
-      id: 'src_knightcrawler_3',
-      name: 'KnightCrawler',
-      manifestUrl: 'https://knightcrawler.elfhosted.com/manifest.json',
-      enabled: true,
-      prefixTag: '🗡️ KnightCrawler',
       priority: 3,
       timeoutMs: 8000,
-      lastHealthCheck: { status: 'ok', responseTimeMs: 250, checkedAt: 'Agora' }
+      lastHealthCheck: { status: 'ok', responseTimeMs: 280, checkedAt: 'Agora' }
     }
   ],
   settings: {
@@ -62,6 +62,24 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (!parsed.name || parsed.name.includes('Fusion') || parsed.name.includes('Brazuca + Torrentio')) {
           parsed.name = 'Plugins BR';
+        }
+        // Ensure working global source exists in config sources
+        if (Array.isArray(parsed.sources)) {
+          const hasGlobal = parsed.sources.some((s: SourceAddon) => s.manifestUrl.includes('stremio-tpb.vercel.app'));
+          if (!hasGlobal) {
+            parsed.sources.push({
+              id: 'src_torrentio_global_auto',
+              name: 'Torrentio / TPB Global',
+              manifestUrl: 'https://stremio-tpb.vercel.app/manifest.json',
+              enabled: true,
+              prefixTag: '⚡ Torrentio Global',
+              priority: parsed.sources.length + 1,
+              timeoutMs: 8000,
+              lastHealthCheck: { status: 'ok', responseTimeMs: 200, checkedAt: 'Agora' }
+            });
+          }
+          // Remove deprecated knightcrawler if present
+          parsed.sources = parsed.sources.filter((s: SourceAddon) => !s.manifestUrl.includes('knightcrawler'));
         }
         return parsed;
       }

@@ -11,6 +11,15 @@ export const POPULAR_PRESETS: AddonPreset[] = [
     tags: ['PT-BR', 'Dublado', 'Nacional', 'Torrent']
   },
   {
+    id: 'tpb-global',
+    name: 'Torrentio / TPB+ Global',
+    description: 'Rastreador global de torrents sem qualquer filtro (Inglês, 4K, 1080p, Multi-áudio, YIFY, Legendados).',
+    category: 'Global',
+    manifestUrl: 'https://stremio-tpb.vercel.app/manifest.json',
+    recommendedPrefix: '⚡ Torrent Global',
+    tags: ['Global', '4K', 'Sem Filtros', 'Torrents']
+  },
+  {
     id: 'torrentio',
     name: 'Torrentio (Padrão)',
     description: 'Provedor global de streams torrents com suporte a múltiplos rastreadores e Debrid.',
@@ -20,22 +29,13 @@ export const POPULAR_PRESETS: AddonPreset[] = [
     tags: ['Global', '4K', 'Multi-Legendas', 'Torrent']
   },
   {
-    id: 'torrentio-elfhosted',
-    name: 'Torrentio (Elfhosted Mirror)',
-    description: 'Espelho alternativo do Torrentio hospedado na Elfhosted para maior estabilidade.',
+    id: 'jackettio',
+    name: 'Jackettio Global',
+    description: 'Indexador global de torrents com alta cobertura de fontes internacionais.',
     category: 'Global',
-    manifestUrl: 'https://torrentio.elfhosted.com/manifest.json',
-    recommendedPrefix: '⚡ Torrentio Alt',
-    tags: ['Global', 'Mirror', 'Estável']
-  },
-  {
-    id: 'knightcrawler',
-    name: 'KnightCrawler',
-    description: 'Rastreador de torrents de alta velocidade baseado no indexador Torrentio.',
-    category: 'Global',
-    manifestUrl: 'https://knightcrawler.elfhosted.com/manifest.json',
-    recommendedPrefix: '🗡️ KnightCrawler',
-    tags: ['Global', 'Torrents', 'Fast']
+    manifestUrl: 'https://jackettio.elfhosted.com/manifest.json',
+    recommendedPrefix: '🛡️ Jackettio',
+    tags: ['Global', 'Indexador', 'Internacional']
   },
   {
     id: 'comet',

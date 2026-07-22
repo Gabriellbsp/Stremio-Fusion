@@ -82,38 +82,38 @@ export function encodeFusionConfig(config: FusionConfig): string {
 export function decodeFusionConfig(token?: string): FusionConfig {
   const defaultConfig: FusionConfig = {
     name: 'Plugins BR',
-    description: 'Addon unificado mesclando Brazuca, Torrentio e outros provedores em um só lugar.',
+    description: 'Unificador de Addons do Stremio: junta mídias brasileiras (Brazuca) e globais (Torrentio) em uma lista única sem filtros.',
     sources: [
       {
         id: 'src_brazuca_default',
         name: 'Brazuca Torrents',
-        manifestUrl: 'https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/sort=qualitysize|limit=10/manifest.json',
+        manifestUrl: 'https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/manifest.json',
         enabled: true,
         prefixTag: '🇧🇷 Brazuca',
         priority: 1,
         timeoutMs: 8000
       },
       {
-        id: 'src_torrentio_default',
-        name: 'Torrentio (Elfhosted)',
-        manifestUrl: 'https://torrentio.elfhosted.com/manifest.json',
+        id: 'src_torrentio_global_default',
+        name: 'Torrentio / TPB Global',
+        manifestUrl: 'https://stremio-tpb.vercel.app/manifest.json',
         enabled: true,
-        prefixTag: '⚡ Torrentio',
+        prefixTag: '⚡ Torrentio Global',
         priority: 2,
         timeoutMs: 8000
       },
       {
-        id: 'src_knightcrawler_default',
-        name: 'KnightCrawler',
-        manifestUrl: 'https://knightcrawler.elfhosted.com/manifest.json',
+        id: 'src_torrentio_default',
+        name: 'Torrentio (Direto)',
+        manifestUrl: 'https://torrentio.strem.fun/manifest.json',
         enabled: true,
-        prefixTag: '🗡️ KnightCrawler',
+        prefixTag: '⚡ Torrentio',
         priority: 3,
         timeoutMs: 8000
       }
     ],
     settings: {
-      prioritizePortuguese: true,
+      prioritizePortuguese: false,
       removeDuplicates: true,
       tagSourceNames: true,
       maxTimeoutMs: 8000,
