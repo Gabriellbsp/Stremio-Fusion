@@ -10,7 +10,7 @@ import { POPULAR_PRESETS } from './data/presets';
 import { Layers, Sliders, Tv, Zap, HelpCircle, ChevronRight, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 const INITIAL_CONFIG: FusionConfig = {
-  name: 'Fusion Stream (Brazuca + Torrentio)',
+  name: 'Plugins BR',
   description: 'Unificador de Addons do Stremio: mídias do Brazuca e Torrentio em um só lugar.',
   sources: [
     {
@@ -59,7 +59,11 @@ export default function App() {
     try {
       const saved = localStorage.getItem('stremio_fusion_config');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (!parsed.name || parsed.name.includes('Fusion') || parsed.name.includes('Brazuca + Torrentio')) {
+          parsed.name = 'Plugins BR';
+        }
+        return parsed;
       }
     } catch (e) {
       console.error('Failed to read from localStorage', e);

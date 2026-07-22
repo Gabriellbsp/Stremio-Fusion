@@ -77,18 +77,39 @@ async function fetchStreamsFromSource(
   const startTime = Date.now();
   
   // Format ID for Stremio protocol: preserve raw colons for series/anime (e.g., tt0944947:1:1)
-  const formattedId = id.split(':').map(part => encodeURIComponent(part)).join(':');
+  let rawId = decodeURIComponent(id);
+  if (rawId.endsWith('.json')) {
+    rawId = rawId.slice(0, -5);
+  }
+  const formattedId = rawId.split(':').map(part => encodeURIComponent(part)).join(':');
 
-  // Candidate URLs for source (with automatic fallback mirrors for Brazuca / Torrentio)
+  // Candidate URLs for source (with automatic fallback working mirrors for Brazuca / Torrentio / Elfhosted)
   const candidates: string[] = [];
   const primaryUrl = normalizeStremioUrl(source.manifestUrl);
   candidates.push(primaryUrl);
 
-  if (primaryUrl.includes('brazuca')) {
-    candidates.push('https://94c8cmyf702d-brazucatorrents.baby-beamup.club/manifest.json');
+  const lowerPrimary = primaryUrl.toLowerCase();
+
+  if (lowerPrimary.includes('brazuca')) {
+    candidates.push('https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/sort=qualitysize|limit=10/manifest.json');
+    candidates.push('https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/manifest.json');
     candidates.push('https://brazuca.stremio.app/manifest.json');
-  } else if (primaryUrl.includes('torrentio')) {
+  }
+  
+  if (lowerPrimary.includes('torrentio')) {
+    candidates.push('https://torrentio.elfhosted.com/manifest.json');
+    candidates.push('https://knightcrawler.elfhosted.com/manifest.json');
     candidates.push('https://torrentio.strem.fun/manifest.json');
+  }
+
+  if (lowerPrimary.includes('knightcrawler')) {
+    candidates.push('https://knightcrawler.elfhosted.com/manifest.json');
+    candidates.push('https://torrentio.elfhosted.com/manifest.json');
+  }
+
+  if (lowerPrimary.includes('comet')) {
+    candidates.push('https://comet.elfhosted.com/manifest.json');
+    candidates.push('https://comet.strem.fun/manifest.json');
   }
 
   // Deduplicate candidates
@@ -98,7 +119,10 @@ async function fetchStreamsFromSource(
   const effectiveTimeout = Math.min(source.timeoutMs || timeoutMs, timeoutMs);
 
   for (const candidateManifestUrl of uniqueCandidates) {
-    const streamUrl = candidateManifestUrl.replace(/\/manifest\.json$/, '') + `/stream/${type}/${formattedId}.json`;
+    const baseUrl = candidateManifestUrl.replace(/\/manifest\.json$/, '');
+    const rawStreamUrl = `${baseUrl}/stream/${type}/${formattedId}.json`;
+    // CRITICAL: Encode pipes | as %7C to prevent Node fetch Invalid URL throw
+    const streamUrl = rawStreamUrl.replaceAll('|', '%7C');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), effectiveTimeout);
 
@@ -106,7 +130,7 @@ async function fetchStreamsFromSource(
       const res = await fetch(streamUrl, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Stremio/4.4.168',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Stremio/4.4.168',
           'Accept': 'application/json, text/plain, */*'
         }
       });
@@ -115,11 +139,7 @@ async function fetchStreamsFromSource(
       const duration = Date.now() - startTime;
 
       if (!res.ok) {
-        if (res.status === 403 || res.status === 503) {
-          lastError = `HTTP ${res.status}: Bloqueado por Cloudflare no DataCenter da nuvem.`;
-        } else {
-          lastError = `HTTP ${res.status}: ${res.statusText}`;
-        }
+        lastError = `HTTP ${res.status}: ${res.statusText}`;
         continue;
       }
 
@@ -134,9 +154,7 @@ async function fetchStreamsFromSource(
       try {
         body = JSON.parse(textBody);
       } catch (parseErr) {
-        lastError = textBody.includes('Cloudflare')
-          ? 'Bloqueio de IP de DataCenter pelo Cloudflare'
-          : 'Erro ao interpretar resposta JSON do addon';
+        lastError = 'Resposta inválida do addon';
         continue;
       }
 
@@ -152,8 +170,10 @@ async function fetchStreamsFromSource(
         const copy = { ...s };
         const tag = source.prefixTag || `[${source.name}]`;
 
-        if (tag) {
-          copy.name = `${tag} ${s.name || ''}`.trim();
+        if (!copy.name || copy.name.trim() === '') {
+          copy.name = tag;
+        } else if (!copy.name.includes(tag)) {
+          copy.name = `${tag} | ${copy.name}`.trim();
         }
 
         if (!copy.title && copy.description) {
@@ -182,7 +202,7 @@ async function fetchStreamsFromSource(
     source,
     streams: [],
     timeMs: Date.now() - startTime,
-    error: lastError || 'Nenhum stream encontrado'
+    error: lastError || 'Nenhum stream retornado'
   };
 }
 
@@ -309,11 +329,11 @@ const handleManifest = (req: Request, res: Response) => {
   const mergedManifest: StremioManifest = {
     id: `com.fusion.stremio.${addonIdPart || 'v1'}`,
     version: '1.0.0',
-    name: config.name || 'Fusion Stream (Brazuca + Torrents)',
+    name: config.name || 'Plugins BR',
     description: config.description || 'Addon unificado mesclando múltiplos provedores em uma só lista de streams.',
     resources: ['stream'],
     types: ['movie', 'series', 'anime', 'other'],
-    idPrefixes: ['tt', 'kitsu', 'mal', 'tmdb', 'tvdb', 'stremio'],
+    idPrefixes: ['tt', 'kitsu', 'mal', 'tmdb', 'tvdb', 'stremio', 'anime', 'series', 'm'],
     catalogs: [],
     logo: 'https://cdn-icons-png.flaticon.com/512/3172/3172551.png',
     background: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=1200&q=80',
@@ -334,13 +354,19 @@ app.get('/:token/manifest.json', handleManifest);
 // 2. STREAMS HANDLER
 const handleStreams = async (req: Request, res: Response) => {
   const token = req.params.token || (req.query.config as string) || (req.query.c as string) || '';
-  const { type, id } = req.params;
+  let { type, id } = req.params;
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'max-age=300, public');
+
+  if (id && id.endsWith('.json')) {
+    id = id.slice(0, -5);
+  }
+
+  console.log(`[Stremio Stream Request] Type: ${type}, ID: ${id}, Token: ${token ? token.slice(0, 12) + '...' : 'default'}`);
 
   const config = decodeFusionConfig(token);
   const enabledSources = config.sources.filter(s => s.enabled);
@@ -392,12 +418,18 @@ const handleStreams = async (req: Request, res: Response) => {
     });
   }
 
+  console.log(`[Stremio Stream Response] Returning ${aggregatedStreams.length} streams for ${type}/${id}`);
+
   res.json({ streams: aggregatedStreams });
 };
 
+app.get('/stream/:type/:id', handleStreams);
 app.get('/stream/:type/:id.json', handleStreams);
+app.get('/api/addon/stream/:type/:id', handleStreams);
 app.get('/api/addon/stream/:type/:id.json', handleStreams);
+app.get('/api/addon/:token/stream/:type/:id', handleStreams);
 app.get('/api/addon/:token/stream/:type/:id.json', handleStreams);
+app.get('/:token/stream/:type/:id', handleStreams);
 app.get('/:token/stream/:type/:id.json', handleStreams);
 
 // 3. CATALOG QUERY

@@ -44,7 +44,7 @@ export function encodeFusionConfig(config: FusionConfig): string {
     });
 
     const compact = {
-      n: config.name === 'Fusion Stream (Brazuca + Torrentio)' ? undefined : config.name,
+      n: (config.name === 'Plugins BR' || config.name === 'Fusion Stream (Brazuca + Torrentio)') ? undefined : config.name,
       d: config.description === 'Addon unificado mesclando Brazuca, Torrentio e outros provedores em um só lugar.' ? undefined : config.description,
       s: minifiedSources,
       st: {
@@ -81,13 +81,13 @@ export function encodeFusionConfig(config: FusionConfig): string {
  */
 export function decodeFusionConfig(token?: string): FusionConfig {
   const defaultConfig: FusionConfig = {
-    name: 'Fusion Stream (Brazuca + Torrentio)',
+    name: 'Plugins BR',
     description: 'Addon unificado mesclando Brazuca, Torrentio e outros provedores em um só lugar.',
     sources: [
       {
         id: 'src_brazuca_default',
         name: 'Brazuca Torrents',
-        manifestUrl: 'https://brazucatorrents.baby-beamup.club/manifest.json',
+        manifestUrl: 'https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/sort=qualitysize|limit=10/manifest.json',
         enabled: true,
         prefixTag: '🇧🇷 Brazuca',
         priority: 1,
@@ -95,11 +95,20 @@ export function decodeFusionConfig(token?: string): FusionConfig {
       },
       {
         id: 'src_torrentio_default',
-        name: 'Torrentio',
-        manifestUrl: 'https://torrentio.strem.fun/manifest.json',
+        name: 'Torrentio (Elfhosted)',
+        manifestUrl: 'https://torrentio.elfhosted.com/manifest.json',
         enabled: true,
         prefixTag: '⚡ Torrentio',
         priority: 2,
+        timeoutMs: 8000
+      },
+      {
+        id: 'src_knightcrawler_default',
+        name: 'KnightCrawler',
+        manifestUrl: 'https://knightcrawler.elfhosted.com/manifest.json',
+        enabled: true,
+        prefixTag: '🗡️ KnightCrawler',
+        priority: 3,
         timeoutMs: 8000
       }
     ],
