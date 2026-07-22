@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Stremio Addon Fusion",
+  "description": "Unificador e mesclador de Addons do Stremio (Brazuca, Torrentio, etc.) em uma só fonte de streams com tolerância a falhas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
