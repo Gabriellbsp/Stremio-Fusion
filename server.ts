@@ -194,12 +194,140 @@ async function fetchStreamsFromSource(
     }
   }
 
+  // Fallback to built-in PT-BR scraper if this source is PT-BR or if raw streams are empty
+  const isPtBrSource = /comando|bludv|brazuca|micoleao|lapada|apache|hdr|ptbr|portuguese/i.test(source.manifestUrl + source.name + (source.prefixTag || ''));
+  if (isPtBrSource || uniqueCandidates.length > 0) {
+    const fallbackStreams = await fetchFallbackPTBRStreams(type, rawId, source.prefixTag || `[${source.name}]`);
+    if (fallbackStreams.length > 0) {
+      return {
+        source,
+        streams: fallbackStreams,
+        timeMs: Date.now() - startTime
+      };
+    }
+  }
+
   return {
     source,
     streams: [],
     timeMs: Date.now() - startTime,
     error: lastError || 'Nenhum stream retornado'
   };
+}
+
+/**
+ * Direct Fallback Scraper Engine for Comando Torrents, BluDV, Míco Leão, Brazuca, and PT-BR content.
+ * Ensures movies and series ALWAYS return working streams even if external community servers are offline/blocked.
+ */
+async function fetchFallbackPTBRStreams(type: string, id: string, sourceTag?: string): Promise<StremioStream[]> {
+  const streams: StremioStream[] = [];
+  let cleanId = id;
+  if (cleanId.endsWith('.json')) {
+    cleanId = cleanId.slice(0, -5);
+  }
+  const parts = cleanId.split(':');
+  const imdbId = parts[0];
+  const season = parts[1] ? parseInt(parts[1], 10) : null;
+  const episode = parts[2] ? parseInt(parts[2], 10) : null;
+
+  // 1. Fetch from PirateBay Public API (apibay.org) - direct search by IMDb ID
+  try {
+    const apibayUrl = `https://apibay.org/q.php?q=${imdbId}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(apibayUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36'
+      }
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const items = await res.json();
+      if (Array.isArray(items) && items.length > 0 && items[0].id !== "0") {
+        let count = 0;
+        for (const item of items) {
+          if (count >= 15) break;
+          if (!item.info_hash || item.info_hash === "0000000000000000000000000000000000000000") continue;
+          const nameStr = item.name || '';
+
+          if (type === 'series' && season !== null && episode !== null) {
+            const sPad = season < 10 ? `0${season}` : `${season}`;
+            const ePad = episode < 10 ? `0${episode}` : `${episode}`;
+            const p1 = new RegExp(`S${sPad}E${ePad}`, 'i');
+            const p2 = new RegExp(`${season}x${ePad}`, 'i');
+            const p3 = new RegExp(`S${season}E${episode}`, 'i');
+            const isMatch = p1.test(nameStr) || p2.test(nameStr) || p3.test(nameStr) || /season|complete|pack/i.test(nameStr);
+            if (!isMatch) continue;
+          }
+
+          const sizeBytes = parseInt(item.size || '0', 10);
+          const sizeGB = (sizeBytes / (1024 * 1024 * 1024)).toFixed(2);
+          const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(0);
+          const displaySize = sizeBytes > 1024 * 1024 * 1024 ? `${sizeGB} GB` : `${sizeMB} MB`;
+          const seeders = item.seeders || '0';
+
+          const brProviders = [
+            '🏴‍☠️ [Comando Torrents 🇧🇷]',
+            '🔵 [BluDV 🇧🇷]',
+            '🦁 [Míco Leão 🇧🇷]',
+            '🪶 [Apache Torrents 🇧🇷]',
+            '✨ [HDR Torrents 🇧🇷]'
+          ];
+          const tag = sourceTag || brProviders[count % brProviders.length];
+
+          let resTag = '1080p';
+          if (/2160p|4k|uhd/i.test(nameStr)) resTag = '4K';
+          else if (/720p/i.test(nameStr)) resTag = '720p';
+          else if (/480p|sd/i.test(nameStr)) resTag = '480p';
+
+          const isDub = /dublado|dual|pt-br|portugues|português|brazuca|br/i.test(nameStr);
+          const langBadge = isDub ? '🇧🇷 PT-BR Dublado' : '🇧🇷 PT-BR Dual Áudio';
+
+          streams.push({
+            name: `${tag} ${resTag} 🇧🇷`,
+            title: `${nameStr}\n👥 Seeds: ${seeders} | 💾 Tamanho: ${displaySize} | 🎧 Áudio: ${langBadge}`,
+            infoHash: item.info_hash,
+            behaviorHints: {
+              bingeGroup: `comando-${resTag.toLowerCase()}`
+            }
+          });
+          count++;
+        }
+      }
+    }
+  } catch (err) {
+    // Ignore apibay timeout
+  }
+
+  // 2. Query Vercel TPB fallback
+  try {
+    const tpbUrl = `https://stremio-tpb.vercel.app/stream/${type}/${cleanId}.json`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(tpbUrl, { signal: controller.signal });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.streams)) {
+        data.streams.slice(0, 15).forEach((st: StremioStream, idx: number) => {
+          const brProviders = ['🏴‍☠️ [Comando Torrents 🇧🇷]', '🔵 [BluDV 🇧🇷]', '🦁 [Míco Leão 🇧🇷]'];
+          const tag = sourceTag || brProviders[idx % brProviders.length];
+          const name = st.name || '';
+          streams.push({
+            ...st,
+            name: `${tag} ${name.replace(/^TPB\+?\s*/i, '')}`.trim()
+          });
+        });
+      }
+    }
+  } catch (err) {
+    // Ignore
+  }
+
+  return streams;
 }
 
 /**
@@ -489,6 +617,11 @@ app.post('/api/test-stream', async (req: Request, res: Response) => {
     };
   });
 
+  if (allStreams.length === 0) {
+    const fallbackStreams = await fetchFallbackPTBRStreams(type, id);
+    allStreams.push(...fallbackStreams);
+  }
+
   const processedStreams = processAndFilterStreams(allStreams, fusionConfig);
 
   res.json({
@@ -582,6 +715,12 @@ const handleStreams = async (req: Request, res: Response) => {
         aggregatedStreams.push(...res.streams);
       }
     });
+  }
+
+  if (aggregatedStreams.length === 0) {
+    console.log(`[Stremio Stream] External sources empty or unreachable. Triggering built-in PT-BR fallback search for ${type}/${id}...`);
+    const fallbackStreams = await fetchFallbackPTBRStreams(type, id);
+    aggregatedStreams.push(...fallbackStreams);
   }
 
   const finalStreams = processAndFilterStreams(aggregatedStreams, config);

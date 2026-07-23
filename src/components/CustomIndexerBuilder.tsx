@@ -165,11 +165,27 @@ export function CustomIndexerBuilder({ config, onChangeConfig }: CustomIndexerBu
         else cleanId = 'tt1190634'; // Default to The Boys
       }
 
-      const res = await fetch(`/stream/series/${cleanId}:1:1.json`);
+      let endpoint = `/stream/series/${cleanId}:1:1.json`;
+      if (/tt0111161|tt0068646|tt0468569|tt0133093|movie|filme/i.test(cleanId) || (!cleanId.includes(':') && /godfather|padrinho|matrix|shrek|batman|star wars|avatar|interstellar/i.test(testQuery))) {
+        endpoint = `/stream/movie/${cleanId}.json`;
+      }
+
+      let res = await fetch(endpoint);
       if (!res.ok) throw new Error(`Erro de resposta do servidor (${res.status})`);
 
-      const data = await res.json();
-      setTestResults(data.streams || []);
+      let data = await res.json();
+      let streams = data.streams || [];
+
+      if (streams.length === 0 && endpoint.includes('series')) {
+        // Fallback try movie endpoint
+        res = await fetch(`/stream/movie/${cleanId}.json`);
+        if (res.ok) {
+          data = await res.json();
+          streams = data.streams || [];
+        }
+      }
+
+      setTestResults(streams);
     } catch (err: any) {
       setTestError(err.message || 'Erro ao realizar busca de teste.');
     } finally {
