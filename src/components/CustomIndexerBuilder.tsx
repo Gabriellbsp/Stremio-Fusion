@@ -13,47 +13,45 @@ interface ProviderOption {
   tag: string;
   flag?: string;
   category: 'pt' | 'global' | 'intl';
-  isPopularBR?: boolean;
+  description?: string;
 }
 
 const ALL_PROVIDERS: ProviderOption[] = [
-  // PT-BR Providers
-  { id: 'comando', name: 'PT Comando', tag: 'Comando Torrents', flag: '🇧🇷', category: 'pt', isPopularBR: true },
-  { id: 'bludv', name: 'PT BluDV', tag: 'BluDV Torrents', flag: '🇧🇷', category: 'pt', isPopularBR: true },
-  { id: 'micoleaodublado', name: 'PT MicoLeaoDublado', tag: 'Míco Leão Dublado', flag: '🇧🇷', category: 'pt', isPopularBR: true },
-  { id: 'brazuca', name: 'Brazuca Torrents', tag: 'Brazuca', flag: '🇧🇷', category: 'pt', isPopularBR: true },
-  { id: 'lapada', name: 'Lapada Torrents', tag: 'Lapada BR', flag: '🇧🇷', category: 'pt', isPopularBR: true },
+  // PT-BR Real Indexers / Sites
+  { id: 'comando', name: 'Comando Torrents', tag: 'Comando', flag: '🏴‍☠️', category: 'pt', description: 'Indexador nacional com lançamentos e filmes dublados.' },
+  { id: 'bludv', name: 'BluDV / Blue DHT', tag: 'BluDV', flag: '🔵', category: 'pt', description: 'Site de torrents dublados e dual áudio em alta definição.' },
+  { id: 'apache', name: 'Apache Torrents', tag: 'Apache', flag: '🪶', category: 'pt', description: 'Indexador focado em acervo nacional e episódios dublados.' },
+  { id: 'hdr', name: 'HDR Torrents', tag: 'HDR BR', flag: '✨', category: 'pt', description: 'Conteúdos em HDR e 4K dublados em Português.' },
+  { id: 'redetorrents', name: 'Rede Torrents', tag: 'Rede BR', flag: '🔴', category: 'pt', description: 'Lançamentos de filmes e séries com dual áudio.' },
+  { id: 'vacuotorrents', name: 'Vácuo Torrents', tag: 'Vácuo', flag: '🌌', category: 'pt', description: 'Rastreador PT-BR com acervo diversificado.' },
+  { id: 'micoleaodublado', name: 'Míco Leão Dublado', tag: 'MícoLeão', flag: '🦁', category: 'pt', description: 'Especializado em desenhos, animações e filmes dublados.' },
+  { id: 'lapada', name: 'Lapada Torrents', tag: 'Lapada', flag: '🔥', category: 'pt', description: 'Indexador de filmes e lançamentos dublados PT-BR.' },
 
-  // Global / English
-  { id: 'yts', name: 'YTS', tag: 'YTS Movies', flag: '🌐', category: 'global' },
-  { id: 'eztv', name: 'EZTV', tag: 'EZTV Series', flag: '🌐', category: 'global' },
-  { id: 'rarbg', name: 'RARBG', tag: 'RARBG Trackers', flag: '🌐', category: 'global' },
-  { id: '1337x', name: '1337x', tag: '1337x Multi', flag: '🌐', category: 'global' },
-  { id: 'thepiratebay', name: 'ThePirateBay', tag: 'TPB', flag: '🏴‍☠️', category: 'global' },
-  { id: 'kickasstorrents', name: 'KickassTorrents', tag: 'KAT', flag: '🌐', category: 'global' },
-  { id: 'torrentgalaxy', name: 'TorrentGalaxy', tag: 'TGx', flag: '🌌', category: 'global' },
-  { id: 'magnetdl', name: 'MagnetDL', tag: 'MagnetDL', flag: '🧲', category: 'global' },
-  { id: 'horriblesubs', name: 'HorribleSubs', tag: 'HorribleSubs Anime', flag: '⛩️', category: 'global' },
-  { id: 'nyaasi', name: 'NyaaSi', tag: 'Nyaa Anime', flag: '⛩️', category: 'global' },
-  { id: 'tokyotosho', name: 'TokyoTosho', tag: 'TokyoTosho', flag: '🇯🇵', category: 'global' },
-  { id: 'anidex', name: 'AniDex', tag: 'AniDex', flag: '⛩️', category: 'global' },
-  { id: 'nekobt', name: 'nekoBT', tag: 'nekoBT', flag: '🐱', category: 'global' },
+  // Global / English Indexers
+  { id: 'yts', name: 'YTS', tag: 'YTS Movies', flag: '🌐', category: 'global', description: 'Filmes leves em 720p, 1080p e 4K.' },
+  { id: 'eztv', name: 'EZTV', tag: 'EZTV Series', flag: '📺', category: 'global', description: 'Especializado em episódios e temporadas de séries.' },
+  { id: 'rarbg', name: 'RARBG', tag: 'RARBG Trackers', flag: '🌐', category: 'global', description: 'Rastreador de alta qualidade para filmes e séries.' },
+  { id: '1337x', name: '1337x', tag: '1337x Multi', flag: '🌐', category: 'global', description: 'Um dos maiores indexadores globais de torrents.' },
+  { id: 'thepiratebay', name: 'ThePirateBay', tag: 'TPB', flag: '🏴‍☠️', category: 'global', description: 'Indexador histórico e completo com milhões de torrents.' },
+  { id: 'kickasstorrents', name: 'KickassTorrents', tag: 'KAT', flag: '🌐', category: 'global', description: 'Indexador global versátil.' },
+  { id: 'torrentgalaxy', name: 'TorrentGalaxy', tag: 'TGx', flag: '🌌', category: 'global', description: 'Rastreador ativo para lançamentos diários.' },
+  { id: 'magnetdl', name: 'MagnetDL', tag: 'MagnetDL', flag: '🧲', category: 'global', description: 'Busca direta por links magnets.' },
+  { id: 'nyaasi', name: 'Nyaa (Ni AC)', tag: 'Nyaa Anime', flag: '⛩️', category: 'global', description: 'Maior indexador de animes e animações orientais.' },
 
-  // International
+  // International Specific Languages
+  { id: 'wolfmax4k', name: 'Wolfmax 4K', tag: 'Wolfmax ES/BR', flag: '🐺', category: 'intl', description: 'Especializado em vídeos 4K e multi-áudio.' },
   { id: 'rutor', name: 'RU Rutor', tag: 'Rutor RU', flag: '🇷🇺', category: 'intl' },
   { id: 'rutracker', name: 'RU Rutracker', tag: 'Rutracker RU', flag: '🇷🇺', category: 'intl' },
   { id: 'torrent9', name: 'FR Torrent9', tag: 'Torrent9 FR', flag: '🇫🇷', category: 'intl' },
   { id: 'ilcorsaronero', name: 'IT ilCorSaRoNeRo', tag: 'Corsaro IT', flag: '🇮🇹', category: 'intl' },
   { id: 'mejortorrent', name: 'ES MejorTorrent', tag: 'MejorTorrent ES', flag: '🇪🇸', category: 'intl' },
-  { id: 'wolfmax4k', name: 'ES Wolfmax4k', tag: 'Wolfmax4k ES', flag: '🇪🇸', category: 'intl' },
-  { id: 'cinecalidad', name: 'MX Cinecalidad', tag: 'Cinecalidad MX/ES', flag: '🇲🇽', category: 'intl' },
-  { id: 'besttorrents', name: 'PL BestTorrents', tag: 'BestTorrents PL', flag: '🇵🇱', category: 'intl' }
+  { id: 'cinecalidad', name: 'Cinecalidad', tag: 'Cinecalidad MX/ES', flag: '🇲🇽', category: 'intl' }
 ];
 
 export function CustomIndexerBuilder({ config, onChangeConfig }: CustomIndexerBuilderProps) {
-  // Active selected providers
+  // Active selected providers (defaulting to the main PT-BR indexers + key global ones)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([
-    'comando', 'bludv', 'micoleaodublado', 'brazuca', 'lapada',
+    'comando', 'bludv', 'apache', 'hdr', 'redetorrents', 'vacuotorrents', 'micoleaodublado', 'lapada',
     'yts', '1337x', 'thepiratebay', 'torrentgalaxy', 'eztv'
   ]);
 
@@ -77,7 +75,7 @@ export function CustomIndexerBuilder({ config, onChangeConfig }: CustomIndexerBu
   };
 
   const selectOnlyBR = () => {
-    setSelectedProviders(['comando', 'bludv', 'micoleaodublado', 'brazuca', 'lapada']);
+    setSelectedProviders(['comando', 'bludv', 'apache', 'hdr', 'redetorrents', 'vacuotorrents', 'micoleaodublado', 'lapada']);
   };
 
   const selectAll = () => {
