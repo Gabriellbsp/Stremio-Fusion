@@ -499,6 +499,142 @@ app.post('/api/test-stream', async (req: Request, res: Response) => {
   });
 });
 
+// Helper to hash token string for unique Stremio manifest ID
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+async function getShowTitleByImdbId(imdbId: string): Promise<string> {
+  const cleanId = imdbId.trim().toLowerCase();
+  if (cleanId === 'tt1190634') return 'The Boys';
+  if (cleanId === 'tt0944947') return 'Game of Thrones';
+  if (cleanId === 'tt0903747') return 'Breaking Bad';
+  if (cleanId === 'tt2543312') return 'Peaky Blinders';
+
+  // 1. Try Cinemeta
+  try {
+    const res = await fetch(`https://v3-cinemeta.strem.io/meta/series/${imdbId}.json`, {
+      headers: { 'User-Agent': 'Stremio/4.4.168' }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.meta?.name) return data.meta.name;
+    }
+  } catch (e) {}
+
+  // 2. Try IMDb Suggest
+  try {
+    const res = await fetch(`https://sg.media-imdb.com/suggests/${cleanId[0]}/${cleanId}.json`);
+    if (res.ok) {
+      const text = await res.text();
+      const match = text.match(/\((.*)\)$/);
+      if (match) {
+        const data = JSON.parse(match[1]);
+        if (data.d && data.d[0] && data.d[0].l) {
+          return data.d[0].l;
+        }
+      }
+    }
+  } catch (e) {}
+
+  return '';
+}
+
+/**
+ * Fallback Torrent Scraper to ensure global streams (like The Boys, Game of Thrones, Movies)
+ * are NEVER empty even when Torrentio blocks datacenter IPs with 403 or Brazuca is missing streams.
+ */
+async function fetchTorrentFallback(type: string, rawId: string): Promise<StremioStream[]> {
+  const fallbackStreams: StremioStream[] = [];
+  try {
+    const parts = rawId.split(':');
+    const imdbId = parts[0];
+    const season = parts[1] ? parseInt(parts[1], 10) : 1;
+    const episode = parts[2] ? parseInt(parts[2], 10) : 1;
+    const sPad = String(season).padStart(2, '0');
+    const ePad = String(episode).padStart(2, '0');
+
+    let titleQuery = '';
+    if (type === 'series') {
+      titleQuery = await getShowTitleByImdbId(imdbId);
+    }
+
+    const queryStr = titleQuery ? `${titleQuery} S${sPad}E${ePad}` : imdbId;
+    console.log(`[Fallback Scraper] Type: ${type}, ID: ${rawId}, Query: "${queryStr}"`);
+
+    // 1. Query Official Pirate Bay JSON API (apibay.org)
+    try {
+      const apibayRes = await fetch(`https://apibay.org/q.php?q=${encodeURIComponent(queryStr)}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Stremio/4.4.168' }
+      });
+      if (apibayRes.ok) {
+        const items = await apibayRes.json();
+        if (Array.isArray(items)) {
+          items
+            .filter(it => it.name && it.info_hash && it.info_hash !== '0000000000000000000000000000000000000000' && parseInt(it.seeders || '0', 10) > 0)
+            .slice(0, 15)
+            .forEach((it, idx) => {
+              const sizeGb = (parseInt(it.size || '0', 10) / 1073741824).toFixed(2);
+              const seeders = it.seeders || '0';
+              let resBadge = '📺 1080p';
+              if (/2160p|4k/i.test(it.name)) resBadge = '✨ 4K';
+              else if (/720p/i.test(it.name)) resBadge = '📹 720p';
+
+              fallbackStreams.push({
+                name: '⚡ Torrentio Global | TPB',
+                title: `${it.name}\n👤 ${seeders} seeders | 💾 ${sizeGb} GB | ${resBadge}`,
+                infoHash: it.info_hash.toLowerCase(),
+                _fusionSource: 'Torrentio Global Fallback',
+                _fusionIdx: idx
+              });
+            });
+        }
+      }
+    } catch (e) {
+      console.warn('[Fallback APIBay Error]:', e);
+    }
+
+    // 2. Query EZTV for Series if needed
+    if (type === 'series' && fallbackStreams.length < 5) {
+      try {
+        const cleanImdbNum = imdbId.replace(/^tt/, '');
+        const eztvRes = await fetch(`https://eztv.re/api/get-torrents?imdb_id=${cleanImdbNum}`, {
+          headers: { 'User-Agent': 'Stremio/4.4.168' }
+        });
+        if (eztvRes.ok) {
+          const ezJson = await eztvRes.json();
+          if (Array.isArray(ezJson.torrents)) {
+            const pat1 = new RegExp(`S${sPad}E${ePad}`, 'i');
+            const matchingEz = ezJson.torrents.filter((t: any) => pat1.test(t.title) && t.hash);
+            matchingEz.slice(0, 8).forEach((t: any, idx: number) => {
+              const sizeGb = (parseInt(t.size_bytes || '0', 10) / 1073741824).toFixed(2);
+              const seeders = t.seeds || '0';
+              fallbackStreams.push({
+                name: '⚡ Torrent Global | EZTV',
+                title: `${t.title}\n👤 ${seeders} seeders | 💾 ${sizeGb} GB`,
+                infoHash: t.hash.toLowerCase(),
+                _fusionSource: 'EZTV Fallback',
+                _fusionIdx: idx
+              });
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('[Fallback EZTV Error]:', e);
+      }
+    }
+  } catch (err) {
+    console.error('[Fallback Engine Error]:', err);
+  }
+
+  return fallbackStreams;
+}
+
 // STREMIO ADDON PROTOCOL ENDPOINTS
 // 1. MANIFEST HANDLER
 const handleManifest = (req: Request, res: Response) => {
@@ -511,13 +647,14 @@ const handleManifest = (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'max-age=3600, public');
 
-  const addonIdPart = token ? token.slice(0, 12).replace(/[^a-zA-Z0-9]/g, '') : 'v2';
+  const tokenHash = token ? simpleHash(token) : 'v2.3';
+  const customName = config.name && config.name.trim() !== '' ? config.name : 'Plugins BR';
 
   // Create fast, non-blocking merged manifest
   const mergedManifest: StremioManifest = {
-    id: `com.pluginsbr.stremio.${addonIdPart || 'v2'}`,
-    version: '2.2.0',
-    name: config.name || 'Plugins BR',
+    id: `com.pluginsbr.stremio.${tokenHash}`,
+    version: '2.3.0',
+    name: customName,
     description: config.description || 'Unificador de Addons do Stremio: junta mídias brasileiras (Brazuca) e globais (Torrentio) em uma lista única sem filtros.',
     resources: ['stream'],
     types: ['movie', 'series', 'anime', 'other'],
@@ -559,25 +696,30 @@ const handleStreams = async (req: Request, res: Response) => {
   const config = decodeFusionConfig(token);
   const enabledSources = config.sources.filter(s => s.enabled);
 
-  if (enabledSources.length === 0) {
-    res.json({ streams: [] });
-    return;
-  }
-
-  // Fetch streams concurrently with fail-safe timeout
-  const timeout = config.settings.maxTimeoutMs || 8000;
-  const fetchPromises = enabledSources.map(src => fetchStreamsFromSource(src, type, id, timeout));
-
-  const results = await Promise.all(fetchPromises);
   let aggregatedStreams: StremioStream[] = [];
 
-  results.forEach(res => {
-    if (res.streams && res.streams.length > 0) {
-      aggregatedStreams.push(...res.streams);
-    }
-  });
+  if (enabledSources.length > 0) {
+    const timeout = config.settings.maxTimeoutMs || 8000;
+    const fetchPromises = enabledSources.map(src => fetchStreamsFromSource(src, type, id, timeout));
+    const results = await Promise.all(fetchPromises);
 
-  const finalStreams = processAndFilterStreams(aggregatedStreams, config);
+    results.forEach(res => {
+      if (res.streams && res.streams.length > 0) {
+        aggregatedStreams.push(...res.streams);
+      }
+    });
+  }
+
+  let finalStreams = processAndFilterStreams(aggregatedStreams, config);
+
+  // Automatic Fallback Engine if streams are empty (e.g. Torrentio 403 or Brazuca missing series)
+  if (finalStreams.length === 0) {
+    console.log(`[Stremio Stream] Final streams empty for ${type}/${id}. Running fallback engine...`);
+    const fallbacks = await fetchTorrentFallback(type, id);
+    if (fallbacks.length > 0) {
+      finalStreams = processAndFilterStreams(fallbacks, config);
+    }
+  }
 
   console.log(`[Stremio Stream Response] Returning ${finalStreams.length} streams for ${type}/${id}`);
 

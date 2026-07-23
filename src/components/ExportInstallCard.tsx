@@ -36,6 +36,9 @@ export const ExportInstallCard: React.FC<ExportInstallCardProps> = ({ config }) 
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
               <h2 className="text-lg font-bold text-white tracking-tight">Seu Link de Addon Unificado</h2>
+              <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                {config.name || 'Plugins BR'}
+              </span>
             </div>
             <p className="text-xs text-slate-300 mt-1">
               Link otimizado para o Stremio (Windows, Mac, Android, Firestick e iOS).

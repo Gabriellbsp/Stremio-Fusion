@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({ activeCount }) => {
               </span>
               <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-500/10">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                v2.2.0 (Atualizado!)
+                v2.3.0 (Atualizado - Nome & Torrents OK!)
               </span>
             </div>
             <p className="text-xs text-slate-400">Mesclador de Addons Stremio (Brazuca + Torrents)</p>

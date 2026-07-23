@@ -50,8 +50,8 @@ export function encodeFusionConfig(config: FusionConfig): string {
     });
 
     const compact = {
-      n: (config.name === 'Plugins BR' || config.name === 'Fusion Stream (Brazuca + Torrentio)') ? undefined : config.name,
-      d: config.description === 'Unificador de Addons do Stremio: junta mídias brasileiras (Brazuca) e globais (Torrentio) em uma lista única sem filtros.' ? undefined : config.description,
+      n: config.name || 'Plugins BR',
+      d: config.description || 'Unificador de Addons do Stremio',
       s: minifiedSources,
       db: config.debrid?.service && config.debrid.service !== 'none' ? {
         s: config.debrid.service,
@@ -193,10 +193,7 @@ export function decodeFusionConfig(token?: string): FusionConfig {
 
     if (!compact || typeof compact !== 'object') return defaultConfig;
 
-    let decodedName = compact.n || defaultConfig.name;
-    if (decodedName.includes('Fusion Stream') || decodedName.includes('Brazuca + Torrentio')) {
-      decodedName = 'Plugins BR';
-    }
+    const decodedName = compact.n || defaultConfig.name;
 
     return {
       name: decodedName,
