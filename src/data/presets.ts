@@ -6,27 +6,54 @@ export const POPULAR_PRESETS: AddonPreset[] = [
     name: 'Brazuca Torrents',
     description: 'Focado em conteúdos dublados e legendados em Português do Brasil (PT-BR), filmes e séries nacionais.',
     category: 'PT-BR',
-    manifestUrl: 'https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/manifest.json',
+    manifestUrl: 'https://brazucatorrents.baby-beamup.club/manifest.json',
     recommendedPrefix: '🇧🇷 Brazuca',
     tags: ['PT-BR', 'Dublado', 'Nacional', 'Torrent']
   },
   {
-    id: 'tpb-global',
-    name: 'Torrentio / TPB+ Global',
-    description: 'Rastreador global de torrents sem qualquer filtro (Inglês, 4K, 1080p, Multi-áudio, YIFY, Legendados).',
-    category: 'Global',
-    manifestUrl: 'https://stremio-tpb.vercel.app/manifest.json',
-    recommendedPrefix: '⚡ Torrent Global',
-    tags: ['Global', '4K', 'Sem Filtros', 'Torrents']
+    id: 'comando-torrents',
+    name: 'Comando Torrents / PT-BR',
+    description: 'Indexador focado no catálogo do Comando Torrents e lançamentos dublados PT-BR.',
+    category: 'PT-BR',
+    manifestUrl: 'https://comando-torrents.baby-beamup.club/manifest.json',
+    recommendedPrefix: '🏴‍☠️ Comando BR',
+    tags: ['PT-BR', 'Dublado', 'Comando', 'Lançamentos']
   },
   {
-    id: 'torrentio',
-    name: 'Torrentio (Padrão)',
+    id: 'mico-leao-dublado',
+    name: 'Míco Leão Dublado',
+    description: 'Especializado em filmes e animações dublados em Português do Brasil.',
+    category: 'PT-BR',
+    manifestUrl: 'https://micoleao.baby-beamup.club/manifest.json',
+    recommendedPrefix: '🦁 MícoLeão',
+    tags: ['PT-BR', 'Dublado', 'Desenhos', 'Filmes']
+  },
+  {
+    id: 'torrentio-ptbr',
+    name: 'Torrentio (Filtro PT-BR)',
+    description: 'Versão do Torrentio otimizada com foco em rastreadores que contêm áudio em Português.',
+    category: 'PT-BR',
+    manifestUrl: 'https://torrentio.strem.fun/sort=quality|qualityfilter=scr,cam|language=portuguese/manifest.json',
+    recommendedPrefix: '⚡ Torrentio BR',
+    tags: ['PT-BR', 'Dublado', 'Multi-Áudio', 'Torrent']
+  },
+  {
+    id: 'torrentio-global',
+    name: 'Torrentio (Padrão Global)',
     description: 'Provedor global de streams torrents com suporte a múltiplos rastreadores e Debrid.',
     category: 'Global',
     manifestUrl: 'https://torrentio.strem.fun/manifest.json',
     recommendedPrefix: '⚡ Torrentio',
     tags: ['Global', '4K', 'Multi-Legendas', 'Torrent']
+  },
+  {
+    id: 'knightcrawler',
+    name: 'KnightCrawler Global',
+    description: 'Rastreador alternativo de torrents de alta resiliência e grande acervo.',
+    category: 'Global',
+    manifestUrl: 'https://knightcrawler.elfhosted.com/manifest.json',
+    recommendedPrefix: '⚔️ KnightCrawler',
+    tags: ['Global', 'Torrent', 'Multi-Áudio']
   },
   {
     id: 'jackettio',
