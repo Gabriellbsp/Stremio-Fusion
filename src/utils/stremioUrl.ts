@@ -11,6 +11,12 @@ export function normalizeStremioUrl(url: string): string {
   if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
     cleaned = 'https://' + cleaned;
   }
+
+  // Auto-rewrite dead Brazuca domain to active mirror
+  if (cleaned.includes('brazucatorrents.baby-beamup.club')) {
+    cleaned = cleaned.replace('brazucatorrents.baby-beamup.club', '94c8cb9f702d-brazuca-torrents.baby-beamup.club');
+  }
+
   // Ensure manifest.json is at the end if it's missing manifest
   if (!cleaned.endsWith('/manifest.json') && !cleaned.includes('manifest.json')) {
     cleaned = cleaned.replace(/\/$/, '') + '/manifest.json';

@@ -6,7 +6,7 @@ export const POPULAR_PRESETS: AddonPreset[] = [
     name: 'Brazuca Torrents',
     description: 'Focado em conteúdos dublados e legendados em Português do Brasil (PT-BR), filmes e séries nacionais.',
     category: 'PT-BR',
-    manifestUrl: 'https://brazucatorrents.baby-beamup.club/manifest.json',
+    manifestUrl: 'https://94c8cb9f702d-brazuca-torrents.baby-beamup.club/manifest.json',
     recommendedPrefix: '🇧🇷 Brazuca',
     tags: ['PT-BR', 'Dublado', 'Nacional', 'Torrent']
   },

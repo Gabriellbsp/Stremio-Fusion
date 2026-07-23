@@ -21,6 +21,10 @@ export const Header: React.FC<HeaderProps> = ({ activeCount }) => {
               <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> Unificador
               </span>
+              <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-500/10">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                v2.2.0 (Atualizado!)
+              </span>
             </div>
             <p className="text-xs text-slate-400">Mesclador de Addons Stremio (Brazuca + Torrents)</p>
           </div>

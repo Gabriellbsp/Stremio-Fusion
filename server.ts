@@ -516,9 +516,9 @@ const handleManifest = (req: Request, res: Response) => {
   // Create fast, non-blocking merged manifest
   const mergedManifest: StremioManifest = {
     id: `com.pluginsbr.stremio.${addonIdPart || 'v2'}`,
-    version: '2.0.0',
-    name: 'Plugins BR',
-    description: 'Addon unificado mesclando Brazuca, Torrentio e outros provedores em um só lugar.',
+    version: '2.2.0',
+    name: config.name || 'Plugins BR',
+    description: config.description || 'Unificador de Addons do Stremio: junta mídias brasileiras (Brazuca) e globais (Torrentio) em uma lista única sem filtros.',
     resources: ['stream'],
     types: ['movie', 'series', 'anime', 'other'],
     idPrefixes: ['tt', 'kitsu', 'mal', 'tmdb', 'tvdb', 'stremio', 'anime', 'series', 'm'],
