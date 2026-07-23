@@ -162,7 +162,7 @@ export default function App() {
             }`}
           >
             <Database className="w-4 h-4 text-emerald-400" />
-            <span>Indexadores BR & Criador</span>
+            <span>Provedores (PROVIDERS) & Filtros</span>
           </button>
 
           <button
