@@ -6,9 +6,10 @@ import { FusionSettings } from './components/FusionSettings';
 import { DebridSettings } from './components/DebridSettings';
 import { ExportInstallCard } from './components/ExportInstallCard';
 import { StreamTester } from './components/StreamTester';
+import { CustomIndexerBuilder } from './components/CustomIndexerBuilder';
 import { AddonPreset, FusionConfig, SourceAddon } from './types';
 import { POPULAR_PRESETS } from './data/presets';
-import { Layers, Sliders, Tv, Zap, HelpCircle, ChevronRight, Check, AlertTriangle, ShieldCheck, HardDrive } from 'lucide-react';
+import { Layers, Sliders, Tv, Zap, HelpCircle, ChevronRight, Check, AlertTriangle, ShieldCheck, HardDrive, Database } from 'lucide-react';
 
 const INITIAL_CONFIG: FusionConfig = {
   name: 'Plugins BR',
@@ -95,7 +96,7 @@ export default function App() {
     return INITIAL_CONFIG;
   });
 
-  const [activeTab, setActiveTab] = useState<'manager' | 'debrid' | 'settings' | 'tester' | 'guide'>('manager');
+  const [activeTab, setActiveTab] = useState<'manager' | 'indexers' | 'debrid' | 'settings' | 'tester' | 'guide'>('manager');
 
   // Save to localStorage on change
   useEffect(() => {
@@ -153,6 +154,18 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab('indexers')}
+            className={`px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'indexers'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Database className="w-4 h-4 text-emerald-400" />
+            <span>Indexadores BR & Criador</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('debrid')}
             className={`px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
               activeTab === 'debrid'
@@ -207,6 +220,11 @@ export default function App() {
             <AddonManager sources={config.sources} onUpdateSources={handleUpdateSources} />
             <PresetsSelector existingSources={config.sources} onAddPreset={handleAddPreset} />
           </div>
+        )}
+
+        {/* TAB 1.5: INDEXERS & CUSTOM TORRENT BUILDER */}
+        {activeTab === 'indexers' && (
+          <CustomIndexerBuilder config={config} onChangeConfig={setConfig} />
         )}
 
         {/* TAB 2: DEBRID & TORBOX */}
